@@ -1,0 +1,23 @@
+{
+  "skill_name": "t2i-rank1-diagnosis",
+  "evals": [
+    {
+      "id": 0,
+      "prompt": "cuhk-pedes ViT-B-32 openai로 train_itc_adamw.py 돌린 run이 epoch 60에 early stop 걸렸어. best t2i@1이 0.7215인데 이게 최선일까? 왜 멈췄는지랑 더 올릴 수 있었는지 좀 봐줘. artifacts/cuhk-pedes_itc_adamw/ 밑에 run_config.json이랑 train_retrieval.log, wandb_meta.json 있어.",
+      "expected_output": "run_config.json의 lr/warmup_ratio/epochs로부터 cosine 스케줄이 epoch 48 근처에서 이미 lr이 거의 바닥까지 decay됐다는 점과, plateau_best_t2i가 epoch 48 이후 12 epoch 동안 min_delta 0.002 이상 개선이 없어 early stop이 정확히 설계대로 발동했다는 점을 근거를 인용해 짚어야 한다. '더 올릴 수 있었는지'에 대해 patience/min_delta를 단순히 늘리라고만 하지 않고, 이 정체가 스케줄 종료에 따른 정상적인 수렴인지 patience가 너무 타이트해서 생긴 조기 종료인지 구분해서, 필요하면 warmup_ratio/epochs/lr 같은 YAML 값을 바꾸는 다음 실험을 구체적으로 제안해야 한다. SDM/ID/adapter 등 폐기된 objective를 되살리자는 제안은 하지 않아야 한다.",
+      "files": [
+        "fixtures/run_config.json",
+        "fixtures/train_retrieval.log",
+        "fixtures/wandb_meta.json"
+      ]
+    },
+    {
+      "id": 1,
+      "prompt": "icfg-pedes 5-fold 결과 요약 파일(fold_summary.json) 첨부함. fold 3만 val t2i@1이 0.583으로 다른 fold들(0.65~0.66)보다 훨씬 낮게 나왔어. 학습이 불안정한 건지, 뭐가 문제인지 봐줄 수 있어?",
+      "expected_output": "fold3의 held_out_identities 수는 다른 fold와 동일(800)하지만 mean_images_per_held_out_identity가 2.10으로 다른 fold(~4.5)보다 훨씬 낮다는 걸 근거로 찾아내야 하고, 이게 identity-disjoint fold split(seed=42)에서 우연히 이미지 수가 적은 person-ID들이 fold3 validation으로 몰린 confound임을 설명해야 한다. shared_test_split_evaluation에서 fold3의 test t2i top1(0.594)이 다른 fold들(0.594~0.606)과 큰 차이가 없다는 점을 근거로, 실제 모델/학습이 불안정한 게 아니라 fold3의 validation gallery가 우연히 더 어려웠을 뿐이라는 결론을 val 지표와 test 지표를 구분해서 내려야 한다. '불안정하다' 또는 '재학습 필요'라고 성급히 결론내리면 안 된다.",
+      "files": [
+        "fixtures/fold_summary.json"
+      ]
+    }
+  ]
+}

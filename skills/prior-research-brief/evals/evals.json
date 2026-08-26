@@ -1,0 +1,43 @@
+{
+  "skill_name": "prior-research-brief",
+  "evals": [
+    {
+      "id": 0,
+      "name": "clip-tbps-topic-scan",
+      "prompt": "CLIP 기반 text-to-image person retrieval(사람 재식별/텍스트 기반 사람 검색) 분야에서 최근에 어떤 연구 흐름이 있었는지 가볍게 조사해줘. 정식 문헌 리뷰까지는 필요 없고, 내가 관련 연구 섹션 쓰기 전에 감을 잡으려는 거야.",
+      "expected_output": "4-8개 정도의 실제로 관련된 논문을 찾아 실제로 읽고(제목만 나열하지 않고), 접근법별로 묶어서 짧게 정리. CLIP 백본 활용, fine-grained alignment, noisy correspondence 등 흐름을 구분하고, 격차(gap)나 트렌드를 한두 문장으로 짚어줌. 분량은 몇 문단 수준으로 짧게.",
+      "files": [],
+      "assertions": [
+        "Discusses at least 4 distinct, real, correctly-attributed papers on CLIP-based text-to-image person retrieval (not fabricated titles)",
+        "Groups papers by approach/angle rather than presenting a flat undifferentiated list",
+        "Explicitly names a gap, trend, or point of disagreement across the papers rather than only listing them",
+        "Response is a short brief (a few paragraphs), not a full formal literature-review document"
+      ]
+    },
+    {
+      "id": 1,
+      "name": "edge-training-efficiency-topic-scan",
+      "prompt": "엣지 디바이스에서 딥러닝 모델 학습 효율화(AMP, gradient checkpointing, EMA 같은 걸로 메모리/시간 아끼는 것)에 관한 선행연구가 뭐가 있는지 간단히 찾아봐줘.",
+      "expected_output": "on-device/edge training efficiency 관련 실제 논문들을 찾아 읽고 접근법별(sparse update, rematerialization/paging, mixed precision 등)로 묶어 짧게 정리. 각 항목이 실제로 뭘 하는지 근거 있게 설명하고, 과도하게 무거운 정식 리뷰 파이프라인으로 흘러가지 않음.",
+      "files": [],
+      "assertions": [
+        "Discusses at least 3 distinct, real, correctly-attributed papers/techniques on edge/on-device training efficiency",
+        "Covers more than one distinct technique category (e.g. mixed precision, gradient checkpointing/rematerialization, sparse/selective updates, EMA)",
+        "Descriptions are grounded in what each paper actually does, not just a keyword-matched title list",
+        "Response stays lightweight/short rather than escalating into a full research pipeline"
+      ]
+    },
+    {
+      "id": 2,
+      "name": "specific-paper-should-defer",
+      "prompt": "이 arXiv 논문 https://arxiv.org/abs/2103.00020 이 뭘 인용하고 있는지 말고, 이 논문 자체가 정확히 뭘 제안하는지 알려줘.",
+      "expected_output": "이건 특정 논문 하나에 대한 질의이므로 prior-research-brief보다는 paper-citation-lookup 스킬 방식(단일 논문을 실제로 읽고 답)으로 처리되어야 함 - 주제 전체를 훑는 브리핑으로 잘못 확장하지 않는지 확인.",
+      "files": [],
+      "assertions": [
+        "Treats this as a single-paper lookup (reads/uses paper-citation-lookup's approach) rather than running a broad multi-paper topic scan",
+        "Correctly describes CLIP's actual contribution (image-text contrastive pretraining enabling zero-shot transfer)",
+        "Does not pad the answer with unrelated 'related work' framing when the user asked about one specific paper"
+      ]
+    }
+  ]
+}

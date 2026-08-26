@@ -1,0 +1,44 @@
+{
+  "skill_name": "paper-citation-lookup",
+  "evals": [
+    {
+      "id": 0,
+      "name": "single-arxiv-html-paper",
+      "prompt": "이 논문 https://arxiv.org/abs/2103.00020 이 정확히 뭘 하는지, 어떤 학습 방식을 쓰는지 알려줘. 내가 지금 쓰고 있는 논문에서 이걸 CLIP 원본으로 인용하려고 하는데, 배치 크기나 학습 스케일 같은 구체적인 수치도 있으면 같이 알려줘.",
+      "expected_output": "arxiv.org/html/2103.00020 (HTML render)을 우선적으로 조회해서, CLIP의 이미지-텍스트 대조학습 방식과 4억 쌍 데이터셋, 256 GPU / 32,768 글로벌 배치 크기 등 구체적 수치를 근거와 함께 답변. 어느 섹션/소스에서 나온 정보인지 밝힘.",
+      "files": [],
+      "assertions": [
+        "Fetched or referenced arxiv.org/html/2103.00020 (the HTML render), not only the abstract page or a general web search",
+        "Answer states the concrete training scale: ~400 million image-text pairs and/or the 32,768 global batch size across 256 GPUs",
+        "Answer grounds claims in a named source (e.g. 'per the arXiv HTML', 'Section X') rather than presenting unsourced assertions",
+        "No fabricated numbers that contradict the actual paper (e.g. wrong batch size, wrong dataset size)"
+      ]
+    },
+    {
+      "id": 1,
+      "name": "single-bibtex-no-arxiv-id",
+      "prompt": "아래 bibtex 항목이 인용하고 있는 논문이 정확히 어떤 방법을 제안하는지 알려줘:\n\n@inproceedings{jiang2023irra,\n  author = {Jiang, Ding and Ye, Mang},\n  title = {Cross-Modal Implicit Relation Reasoning and Aligning for Text-to-Image Person Retrieval},\n  booktitle = {Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition},\n  pages = {2787--2797},\n  year = {2023},\n  url = {https://openaccess.thecvf.com/content/CVPR2023/html/Jiang_Cross-Modal_Implicit_Relation_Reasoning_and_Aligning_for_Text-to-Image_Person_Retrieval_CVPR_2023_paper.html}\n}",
+      "expected_output": "bib 항목에 arXiv id가 없으므로 (eprint/archiveprefix 없음) Semantic Scholar 등으로 arXiv 버전 존재 여부를 먼저 확인하거나, 제공된 CVF url / 논문 자체 내용을 근거로 IRRA의 핵심 방법(Implicit Relation Reasoning 모듈 + SDM 매칭 손실)을 설명. 출처를 명시하고, 못 찾은 정보는 추측하지 않음.",
+      "files": [],
+      "assertions": [
+        "Attempted to check whether an arXiv version of this paper exists (e.g. via Semantic Scholar or the resolve_paper.py script) before settling only for the CVF page",
+        "Answer correctly identifies IRRA's core method: an Implicit Relation Reasoning module and/or the SDM (similarity distribution matching) cross-modal loss",
+        "Answer names its source rather than presenting the summary as if read from nowhere"
+      ]
+    },
+    {
+      "id": 2,
+      "name": "batch-bibtex-file",
+      "prompt": "첨부한 sample_refs.bib 파일에 있는 4개 인용 논문 각각이 뭘 제안하는지 한두 문장씩 요약해줘. 관련 연구(related work) 문단에 넣을 용도야.",
+      "expected_output": "4개 항목(CLIP, ResNet, BERT, ViT) 각각에 대해 arXiv HTML(가능한 경우: BERT, ViT)을 우선 사용하고 없으면 다른 방법으로 조회해서, 제목만 재진술하지 않는 실제 기여 요약을 제공. 출처가 불확실한 항목은 명시.",
+      "files": [
+        "sample_refs.bib"
+      ],
+      "assertions": [
+        "Used the batch-resolution script (resolve_paper.py --bib) rather than resolving each entry's source ad hoc one at a time",
+        "All 4 papers (CLIP, ResNet, BERT, ViT) are individually addressed in the final answer",
+        "Each summary contains a specific, non-generic detail (e.g. residual connections for ResNet, masked language modeling for BERT, patch-based image tokenization for ViT, image-text contrastive pretraining for CLIP) rather than just rephrasing the title"
+      ]
+    }
+  ]
+}
