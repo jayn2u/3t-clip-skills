@@ -1,0 +1,20 @@
+epoch=42 global_step=4200 split=val i2t@1=0.6810 i2t@5=0.8420 i2t@10=0.9000 t2i@1=0.7050 t2i@5=0.8450 t2i@10=0.9020 i2t_mAP=0.6530 t2i_mAP=0.6760 t2i_mINP=0.4950 avg@1=0.6930
+epoch=43 global_step=4300 split=val i2t@1=0.6840 i2t@5=0.8460 i2t@10=0.9040 t2i@1=0.7080 t2i@5=0.8480 t2i@10=0.9050 i2t_mAP=0.6570 t2i_mAP=0.6790 t2i_mINP=0.4980 avg@1=0.6960
+epoch=44 global_step=4400 split=val i2t@1=0.6880 i2t@5=0.8500 i2t@10=0.9080 t2i@1=0.7120 t2i@5=0.8520 t2i@10=0.9090 i2t_mAP=0.6610 t2i_mAP=0.6830 t2i_mINP=0.5020 avg@1=0.7000
+epoch=45 global_step=4500 split=val i2t@1=0.6910 i2t@5=0.8540 i2t@10=0.9120 t2i@1=0.7160 t2i@5=0.8560 t2i@10=0.9130 i2t_mAP=0.6650 t2i_mAP=0.6870 t2i_mINP=0.5070 avg@1=0.7035
+epoch=46 global_step=4600 split=val i2t@1=0.6940 i2t@5=0.8570 i2t@10=0.9150 t2i@1=0.7190 t2i@5=0.8590 t2i@10=0.9160 i2t_mAP=0.6680 t2i_mAP=0.6900 t2i_mINP=0.5100 avg@1=0.7065
+epoch=47 global_step=4700 split=val i2t@1=0.6960 i2t@5=0.8590 i2t@10=0.9170 t2i@1=0.7200 t2i@5=0.8600 t2i@10=0.9170 i2t_mAP=0.6700 t2i_mAP=0.6910 t2i_mINP=0.5120 avg@1=0.7080
+epoch=48 global_step=4800 split=val i2t@1=0.6990 i2t@5=0.8620 i2t@10=0.9200 t2i@1=0.7215 t2i@5=0.8620 t2i@10=0.9200 i2t_mAP=0.6730 t2i_mAP=0.6930 t2i_mINP=0.5150 avg@1=0.7103
+epoch=49 global_step=4900 split=val i2t@1=0.6990 i2t@5=0.8620 i2t@10=0.9200 t2i@1=0.7214 t2i@5=0.8620 t2i@10=0.9200 i2t_mAP=0.6730 t2i_mAP=0.6930 t2i_mINP=0.5150 avg@1=0.7102
+epoch=50 global_step=5000 split=val i2t@1=0.6992 i2t@5=0.8620 i2t@10=0.9200 t2i@1=0.7213 t2i@5=0.8620 t2i@10=0.9200 i2t_mAP=0.6731 t2i_mAP=0.6930 t2i_mINP=0.5150 avg@1=0.7103
+epoch=51 global_step=5100 split=val i2t@1=0.6991 i2t@5=0.8620 i2t@10=0.9200 t2i@1=0.7212 t2i@5=0.8620 t2i@10=0.9200 i2t_mAP=0.6731 t2i_mAP=0.6930 t2i_mINP=0.5150 avg@1=0.7102
+epoch=52 global_step=5200 split=val i2t@1=0.6990 i2t@5=0.8620 i2t@10=0.9200 t2i@1=0.7211 t2i@5=0.8620 t2i@10=0.9200 i2t_mAP=0.6730 t2i_mAP=0.6930 t2i_mINP=0.5150 avg@1=0.7101
+epoch=53 global_step=5300 split=val i2t@1=0.6992 i2t@5=0.8620 i2t@10=0.9200 t2i@1=0.7210 t2i@5=0.8620 t2i@10=0.9200 i2t_mAP=0.6731 t2i_mAP=0.6930 t2i_mINP=0.5150 avg@1=0.7101
+epoch=54 global_step=5400 split=val i2t@1=0.6990 i2t@5=0.8620 i2t@10=0.9200 t2i@1=0.7209 t2i@5=0.8620 t2i@10=0.9200 i2t_mAP=0.6730 t2i_mAP=0.6930 t2i_mINP=0.5150 avg@1=0.7100
+epoch=55 global_step=5500 split=val i2t@1=0.6991 i2t@5=0.8620 i2t@10=0.9200 t2i@1=0.7208 t2i@5=0.8620 t2i@10=0.9200 i2t_mAP=0.6730 t2i_mAP=0.6930 t2i_mINP=0.5150 avg@1=0.7100
+epoch=56 global_step=5600 split=val i2t@1=0.6990 i2t@5=0.8620 i2t@10=0.9200 t2i@1=0.7207 t2i@5=0.8620 t2i@10=0.9200 i2t_mAP=0.6730 t2i_mAP=0.6930 t2i_mINP=0.5150 avg@1=0.7099
+epoch=57 global_step=5700 split=val i2t@1=0.6991 i2t@5=0.8620 i2t@10=0.9200 t2i@1=0.7206 t2i@5=0.8620 t2i@10=0.9200 i2t_mAP=0.6730 t2i_mAP=0.6930 t2i_mINP=0.5150 avg@1=0.7099
+epoch=58 global_step=5800 split=val i2t@1=0.6990 i2t@5=0.8620 i2t@10=0.9200 t2i@1=0.7205 t2i@5=0.8620 t2i@10=0.9200 i2t_mAP=0.6730 t2i_mAP=0.6930 t2i_mINP=0.5150 avg@1=0.7098
+epoch=59 global_step=5900 split=val i2t@1=0.6990 i2t@5=0.8620 i2t@10=0.9200 t2i@1=0.7204 t2i@5=0.8620 t2i@10=0.9200 i2t_mAP=0.6730 t2i_mAP=0.6930 t2i_mINP=0.5150 avg@1=0.7097
+epoch=60 global_step=6000 split=val i2t@1=0.6989 i2t@5=0.8620 i2t@10=0.9200 t2i@1=0.7203 t2i@5=0.8620 t2i@10=0.9200 i2t_mAP=0.6729 t2i_mAP=0.6929 t2i_mINP=0.5149 avg@1=0.7096
+early_stop epoch=60 checkpoint_selection_metric=t2i_r1 plateau_best_t2i=0.7215 plateau_bad_epochs=12 min_delta=0.002 patience=12 stop_reason="t2i_r1 did not improve by 0.002000 for 12 validation epochs"

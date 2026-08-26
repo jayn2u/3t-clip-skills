@@ -1,4 +1,5 @@
 import json
+import subprocess
 import unittest
 from pathlib import Path
 
@@ -51,4 +52,24 @@ class BundleTests(unittest.TestCase):
                 for relative in case.get("files", []):
                     self.assertTrue(
                         (eval_dir / relative).is_file(), f"{name}: {relative}"
+                    )
+
+    def test_eval_file_references_are_tracked(self):
+        for name in EXPECTED_SKILLS:
+            eval_dir = SKILLS / name / "evals"
+            payload = json.loads((eval_dir / "evals.json").read_text())
+            for case in payload["evals"]:
+                for relative in case.get("files", []):
+                    path = eval_dir / relative
+                    tracked_path = path.relative_to(ROOT)
+                    result = subprocess.run(
+                        ["git", "ls-files", "--error-unmatch", str(tracked_path)],
+                        cwd=ROOT,
+                        text=True,
+                        capture_output=True,
+                    )
+                    self.assertEqual(
+                        result.returncode,
+                        0,
+                        f"{name}: {relative} is not tracked",
                     )
