@@ -7,7 +7,6 @@
     "email": "contact.jiwoong.choi@vis.ssu.ac.kr"
   },
   "repository": "https://github.com/jayn2u/3t-clip-skills",
-  "skills": "./skills/",
   "interface": {
     "displayName": "3T CLIP",
     "shortDescription": "Research and retrieval skills for 3T CLIP.",

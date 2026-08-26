@@ -2,6 +2,7 @@ import json
 import contextlib
 import importlib.util
 import io
+import os
 import shutil
 import stat
 import subprocess
@@ -19,13 +20,51 @@ ROOT = Path(__file__).resolve().parents[1]
 SKILLS = ROOT / "skills"
 CODEX_ADAPTER = SKILLS
 VALIDATOR = ROOT / "scripts/validate_bundle.py"
-QUICK_VALIDATE = Path("/home/jwchoi/.codex/skills/.system/skill-creator/scripts/quick_validate.py")
-PLUGIN_VALIDATE = Path("/home/jwchoi/.codex/skills/.system/plugin-creator/scripts/validate_plugin.py")
+CODEX_INSPECT = ROOT / "scripts/inspect_codex_catalog.py"
 EXPECTED_SKILLS = {
     "paper-citation-lookup",
     "prior-research-brief",
     "t2i-rank1-diagnosis",
 }
+
+
+def find_official_script(relative: str) -> Path | None:
+    roots = (
+        Path.home() / ".codex/skills/.system",
+        Path.home() / ".agents/skills/.system",
+    )
+    for root in roots:
+        candidate = root / relative
+        if candidate.is_file():
+            return candidate
+    return None
+
+
+def find_yaml_python() -> str | None:
+    executables: list[str] = []
+    for command in ("python3", "python"):
+        for directory in os.environ.get("PATH", "").split(os.pathsep):
+            if not directory:
+                continue
+            candidate = Path(directory) / command
+            if candidate.is_file() and os.access(candidate, os.X_OK):
+                executables.append(str(candidate))
+    executables.append(sys.executable)
+    seen: set[str] = set()
+    for executable in executables:
+        if executable in seen:
+            continue
+        seen.add(executable)
+        if not executable:
+            continue
+        result = subprocess.run(
+            [executable, "-c", "import yaml"],
+            text=True,
+            capture_output=True,
+        )
+        if result.returncode == 0:
+            return executable
+    return None
 
 
 def load_resolver():
@@ -87,29 +126,90 @@ class BundleTests(unittest.TestCase):
     def test_codex_adapter_uses_only_canonical_skill_payload(self):
         self.assertTrue((CODEX_ADAPTER / ".codex-plugin/plugin.json").is_file())
         self.assertFalse((ROOT / "codex-plugin").exists())
+        self.assertFalse((CODEX_ADAPTER / "skills").exists())
         forbidden = {".git", ".superpowers", "__pycache__", "tests", "docs"}
         for path in CODEX_ADAPTER.rglob("*"):
             self.assertNotIn(path.name, forbidden, path)
 
-    def test_codex_catalog_uses_namespaced_skill_identifiers(self):
-        marketplace = json.loads(
-            (ROOT / ".agents/plugins/marketplace.json").read_text()
-        )
+    def test_codex_adapter_manifest_discovers_direct_child_skills(self):
         manifest = json.loads((CODEX_ADAPTER / ".codex-plugin/plugin.json").read_text())
-        readme = (ROOT / "README.md").read_text()
-        self.assertEqual(marketplace["plugins"][0]["name"], "3t-clip")
-        self.assertEqual(manifest["name"], "3t-clip")
-        for name in EXPECTED_SKILLS:
-            self.assertIn(f"$3t-clip:{name}", readme)
+        self.assertNotIn("skills", manifest)
+        direct_skills = {
+            path.name
+            for path in CODEX_ADAPTER.iterdir()
+            if path.is_dir() and not path.name.startswith(".")
+        }
+        self.assertEqual(direct_skills, EXPECTED_SKILLS)
 
-    def test_official_codex_validator_accepts_clean_adapter(self):
+    def test_codex_catalog_uses_namespaced_skill_identifiers(self):
+        self.assertTrue(CODEX_INSPECT.is_file())
+        if os.environ.get("RUN_CODEX_CATALOG") != "1":
+            self.skipTest("Codex isolated catalog integration is opt-in")
+        if not shutil.which("codex") or not shutil.which("bwrap"):
+            self.skipTest("Codex isolated catalog integration is unavailable")
         result = subprocess.run(
-            ["/usr/bin/python3", str(PLUGIN_VALIDATE), str(CODEX_ADAPTER)],
+            ["uv", "run", "python", str(CODEX_INSPECT), str(ROOT)],
+            cwd=ROOT,
+            text=True,
+            capture_output=True,
+        )
+        if result.returncode == 2 and "integration unavailable" in result.stderr:
+            self.skipTest(result.stderr.strip())
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+        catalog = json.loads(result.stdout)
+        self.assertEqual(catalog["pluginId"], "3t-clip@3t-clip")
+        self.assertEqual(
+            set(catalog["skillIdentifiers"]),
+            {f"3t-clip:{name}" for name in EXPECTED_SKILLS},
+        )
+        self.assertEqual(catalog["forbiddenPaths"], [])
+
+    def test_official_codex_validator_validates_canonical_skill_payload(self):
+        validator = find_official_script("plugin-creator/scripts/validate_plugin.py")
+        if validator is None:
+            self.skipTest("official Codex plugin validator is unavailable")
+        interpreter = find_yaml_python()
+        if interpreter is None:
+            self.skipTest("Python interpreter with YAML support is unavailable")
+        result = subprocess.run(
+            [interpreter, str(validator), str(ROOT)],
             cwd=ROOT,
             text=True,
             capture_output=True,
         )
         self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+
+    def test_official_codex_validator_visits_every_canonical_skill(self):
+        validator = find_official_script("plugin-creator/scripts/validate_plugin.py")
+        if validator is None:
+            self.skipTest("official Codex plugin validator is unavailable")
+        interpreter = find_yaml_python()
+        if interpreter is None:
+            self.skipTest("Python interpreter with YAML support is unavailable")
+        probe = (
+            "import importlib.util, json, sys\n"
+            "spec = importlib.util.spec_from_file_location('validator', sys.argv[1])\n"
+            "module = importlib.util.module_from_spec(spec)\n"
+            "spec.loader.exec_module(module)\n"
+            "visited = []\n"
+            "original = module.validate_skill_manifest\n"
+            "def record(skill_root, errors):\n"
+            "    visited.append(skill_root.name)\n"
+            "    return original(skill_root, errors)\n"
+            "module.validate_skill_manifest = record\n"
+            "errors = module.validate_plugin(__import__('pathlib').Path(sys.argv[2]))\n"
+            "print(json.dumps({'errors': errors, 'visited': sorted(set(visited))}))\n"
+        )
+        result = subprocess.run(
+            [interpreter, "-c", probe, str(validator), str(ROOT)],
+            cwd=ROOT,
+            text=True,
+            capture_output=True,
+        )
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+        payload = json.loads(result.stdout)
+        self.assertEqual(payload["errors"], [])
+        self.assertEqual(set(payload["visited"]), EXPECTED_SKILLS)
 
     def test_bundle_contains_exactly_expected_skills(self):
         actual = {path.parent.name for path in SKILLS.glob("*/SKILL.md")}
@@ -132,10 +232,15 @@ class BundleTests(unittest.TestCase):
         self.assertEqual(mode & (stat.S_IXUSR | stat.S_IXGRP | stat.S_IXOTH), 0)
 
     def test_official_quick_validate_accepts_every_skill(self):
-        self.assertTrue(QUICK_VALIDATE.is_file())
+        quick_validate = find_official_script("skill-creator/scripts/quick_validate.py")
+        if quick_validate is None:
+            self.skipTest("official Codex skill validator is unavailable")
+        interpreter = find_yaml_python()
+        if interpreter is None:
+            self.skipTest("Python interpreter with YAML support is unavailable")
         for name in EXPECTED_SKILLS:
             result = subprocess.run(
-                ["/usr/bin/python3", str(QUICK_VALIDATE), str(SKILLS / name)],
+                [interpreter, str(quick_validate), str(SKILLS / name)],
                 cwd=ROOT,
                 text=True,
                 capture_output=True,

@@ -225,7 +225,7 @@ def validate_adapter(root: Path, errors: list[str]) -> None:
         errors.append(f"{adapter}: Codex release adapter is missing")
         return
     validate_plugin_manifest(
-        adapter / ".codex-plugin/plugin.json", "3t-clip", "./skills/", errors
+        adapter / ".codex-plugin/plugin.json", "3t-clip", None, errors
     )
     for path in adapter.rglob("*"):
         if path.name in FORBIDDEN_PACKAGE_NAMES:
