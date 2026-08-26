@@ -9,6 +9,18 @@ This repo trains CLIP-family models for text-to-image pedestrian retrieval (CUHK
 
 The core discipline: **gather evidence before forming a hypothesis, then rank hypotheses by what the evidence actually supports.** A diagnosis that isn't traceable to a specific log line, config value, or W&B chart is not a diagnosis — it's a guess. Cite the file and value you're reasoning from.
 
+## 0. Read-only compatibility preflight
+
+Before reading a run, identify the current checkout with read-only commands such as
+`pwd`, `git rev-parse --show-toplevel`, `test -f`, and repository text search.
+Continue only when the root is a compatible lab_clip checkout containing
+`AGENTS.md`, `CONTEXT.md`, the required `docs/` domain and decision records,
+the relevant `configs/` YAML, `src/` modules, and the requested `artifacts/`
+directory with `wandb_meta.json` when W&B linkage is part of the question.
+If any required compatibility marker is missing, refuse the diagnosis clearly
+and explain which marker failed. Outside a compatible checkout this skill is
+read-only: it must not modify, create, delete, or synchronize project files.
+
 ## 1. Know what "current" means here
 
 The active training surface is **in-batch InfoNCE with person-ID positive sets, full-model finetuning, no modality adapter** — three optimizer variants (`train_itc_sgd.py`, `train_itc_adam.py`, `train_itc_adamw.py`), optionally with trainable-parameter EMA. This is the *only* supported objective; SDM, ID loss, EFA, distillation, and adapter-based conditions are retired (see `docs/adr/0005`–`0008`, all `superseded_by` → `docs/superpowers/specs/2026-08-09-train-itc-only-design.md`). `src/wandb_tracking.py` still has logging code paths for those retired losses (`sdm_loss`, `id_loss`, `efa_loss`, `distill_loss`, …) — if you see those keys mentioned in code, they're dead metric names from before the simplification, not something currently being trained. Don't diagnose a run as "missing SDM regularization" or propose reviving an adapter; that would contradict the accepted design decision. If a genuinely new idea seems worth trying anyway, say so explicitly and flag that it's a fresh proposal, not a return to a retired ADR.

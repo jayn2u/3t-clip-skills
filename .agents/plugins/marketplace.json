@@ -8,7 +8,7 @@
       "name": "3t-clip",
       "source": {
         "source": "local",
-        "path": "./"
+        "path": "./skills"
       },
       "policy": {
         "installation": "AVAILABLE",

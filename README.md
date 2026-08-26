@@ -61,10 +61,12 @@ codex plugin add 3t-clip@3t-clip
 Codex를 다시 시작한 뒤 세 스킬은 다음의 명시적 호출로 사용할 수 있습니다.
 
 ```text
-$paper-citation-lookup
-$prior-research-brief
-$t2i-rank1-diagnosis
+$3t-clip:paper-citation-lookup
+$3t-clip:prior-research-brief
+$3t-clip:t2i-rank1-diagnosis
 ```
+
+Codex 마켓플레이스는 정본 `skills/` 디렉터리를 바로 가리키는 얇은 릴리스 어댑터를 사용합니다. `skills/.codex-plugin/plugin.json`만 추가 메타데이터로 포함하고 스킬 파일은 복제하지 않으므로, 설치 캐시에 저장소 메타데이터를 포함하지 않으면서 세 스킬을 함께 설치합니다.
 
 ## 자동 선택과 직접 호출
 
@@ -77,14 +79,12 @@ $t2i-rank1-diagnosis
 `@latest`는 최신 버전을 의도적으로 선택할 때만 사용하고, 재현 가능한 실행에는 SemVer 태그를 고정하십시오. 이 번들의 Claude와 Codex 매니페스트 버전은 같은 `MAJOR.MINOR.PATCH` 버전을 사용하며, 호환되지 않는 지시문 변경은 major, 새 기능은 minor, 버그 수정과 문서 수정은 patch로 올립니다.
 
 ```bash
-npx skills@latest update
-npx skills@latest remove paper-citation-lookup
-npx skills@latest remove prior-research-brief
-npx skills@latest remove t2i-rank1-diagnosis
+npx skills@latest update -p paper-citation-lookup prior-research-brief t2i-rank1-diagnosis -y
+npx skills@latest remove paper-citation-lookup prior-research-brief t2i-rank1-diagnosis -y
 
 claude plugin marketplace update 3t-clip
-claude plugin update 3t-clip@3t-clip
-claude plugin uninstall 3t-clip@3t-clip
+claude plugin update 3t-clip@3t-clip --scope project
+claude plugin uninstall 3t-clip@3t-clip --scope project
 claude plugin marketplace remove 3t-clip
 
 codex plugin marketplace upgrade
@@ -111,6 +111,12 @@ Claude의 업데이트는 재시작이 필요할 수 있습니다. Codex 마켓�
 ```
 
 각 대상 안의 오래된 파일은 제거될 수 있고 세 대상 디렉터리는 없을 경우 만들어질 수 있지만, 부모와 대상 저장소의 다른 파일·디렉터리는 건드리지 않습니다. 빈 경로, 루트형 경로, 번들 자체, 마커가 없는 디렉터리, 경로 구성 요소가 심볼릭 링크인 대상은 거부합니다. 테스트는 임시 대상만 사용하며 실제 `/mnt/data/lab_clip`에는 동기화하지 않습니다.
+
+동기화 전에 재사용 가능한 오프라인 검증기가 JSON 매니페스트, 스킬 frontmatter, 지원 파일, eval 리소스 경로를 모두 확인합니다. 번들만 검사하려면 다음을 실행하십시오.
+
+```bash
+uv run python scripts/validate_bundle.py .
+```
 
 ## 네트워크와 보안 경계
 

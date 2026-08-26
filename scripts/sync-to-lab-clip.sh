@@ -55,26 +55,9 @@ SCRIPT_DIR=$(CDPATH= cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd -P)
 SOURCE_ROOT=$(CDPATH= cd -- "$SCRIPT_DIR/.." && pwd -P)
 
 validate_source() {
-  [[ -d "$SOURCE_ROOT/skills" ]] || fail "유효한 lab_clip 스킬 번들이 없습니다: $SOURCE_ROOT/skills"
-  [[ -f "$SOURCE_ROOT/.claude-plugin/plugin.json" ]] || fail "Claude 번들 매니페스트가 없습니다"
-  [[ -f "$SOURCE_ROOT/.codex-plugin/plugin.json" ]] || fail "Codex 번들 매니페스트가 없습니다"
-
-  local skill source_dir entry entry_name
-  for skill in "${SKILLS[@]}"; do
-    source_dir="$SOURCE_ROOT/skills/$skill"
-    [[ -d "$source_dir" && ! -L "$source_dir" ]] || fail "번들 스킬 디렉터리가 없습니다: $source_dir"
-    [[ -f "$source_dir/SKILL.md" && ! -L "$source_dir/SKILL.md" ]] || fail "번들 스킬 문서가 없습니다: $source_dir/SKILL.md"
-  done
-
-  shopt -s nullglob
-  for entry in "$SOURCE_ROOT/skills"/*; do
-    [[ -d "$entry" ]] || continue
-    entry_name=${entry##*/}
-    case "$entry_name" in
-      paper-citation-lookup|prior-research-brief|t2i-rank1-diagnosis) ;;
-      *) fail "번들에 허용되지 않은 스킬이 있습니다: $entry_name" ;;
-    esac
-  done
+  [[ -f "$SOURCE_ROOT/scripts/validate_bundle.py" ]] || fail "번들 검증기가 없습니다"
+  command -v uv >/dev/null 2>&1 || fail "uv가 필요합니다"
+  uv run python "$SOURCE_ROOT/scripts/validate_bundle.py" "$SOURCE_ROOT" || fail "번들 검증에 실패했습니다"
 }
 
 validate_source

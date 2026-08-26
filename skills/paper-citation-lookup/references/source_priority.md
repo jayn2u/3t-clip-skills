@@ -1,12 +1,12 @@
 # Why `resolve_paper.py` picks sources in this order
 
-1. **arXiv HTML** (`arxiv.org/html/<id>`), if the bib entry (or a Semantic
+1. **arXiv HTML** (`arxiv.org/html/{id}`), if the bib entry (or a Semantic
    Scholar lookup) reveals an arXiv id and the HTML actually returns 200.
    Full text, addressable by section — the best case.
 
-2. **arXiv PDF** (`arxiv.org/pdf/<id>`), if the id exists but HTML 404s (rare
+2. **arXiv PDF** (`arxiv.org/pdf/{id}`), if the id exists but HTML 404s (rare
    now, but happens for some older or malformed submissions). Still full
-   text, just not section-addressable in the same way; use `Read` with a
+   text, just not section-addressable in the same way; use a document-reading
    `pages` range for long ones instead of pulling the whole document.
 
 3. **Semantic Scholar arXiv discovery**: if the bib entry has *no* arXiv id
@@ -17,18 +17,22 @@
    preprint's HTML is still better than a bare proceedings abstract page, so
    it's checked before falling through to the bib's own `url`.
 
-4. **The bib entry's own `url` field** (ACL Anthology, CVF Open Access, MLR
+4. **A DOI URL** (`https://doi.org/...`), when the entry includes a DOI and no
+   arXiv source was found. The DOI resolver verifies the canonical publisher
+   URL before recommending it.
+
+5. **The bib entry's own `url` field** (ACL Anthology, CVF Open Access, MLR
    Press, ACM DL, IEEE Xplore, ScienceDirect, etc.), if no arXiv version
    surfaced. Quality varies a lot here: some of these pages are full text,
    some are abstract-only with a PDF link, some are paywalled. Read what you
    get; don't assume it's full text just because the HTTP status was 200.
 
-5. **Semantic Scholar metadata as a standalone fallback** (open-access PDF
+6. **Semantic Scholar metadata as a standalone fallback** (open-access PDF
    link if S2 has one, otherwise its abstract + tldr) when nothing else
    resolved. This is metadata, not the paper — treat a summary built only
    from this tier as lower-confidence and say so.
 
-6. **Web search fallback**: if even Semantic Scholar has no record (very old
+7. **Web search fallback**: if even Semantic Scholar has no record (very old
    papers, non-indexed venues, workshop papers), the script returns a
    suggested search query and expects the caller to run a manual web search
    and use judgment on what turns up.

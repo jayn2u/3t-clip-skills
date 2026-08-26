@@ -5,22 +5,24 @@ Given a .bib file, a single bibtex entry, an arXiv id/URL, a DOI, or a bare
 title, this script figures out (via cheap HTTP status checks, not full
 downloads) which source is worth fetching next, in priority order:
 
-  1. arXiv HTML  (arxiv.org/html/<id>)      -- richest, section-addressable
-  2. arXiv PDF   (arxiv.org/pdf/<id>)       -- fallback when HTML 404s
-  3. the bib entry's own `url` field         -- publisher/anthology page
-  4. Semantic Scholar Graph API              -- metadata + abstract + tldr,
+  1. arXiv HTML  (arxiv.org/html/{id})      -- richest, section-addressable
+  2. arXiv PDF   (arxiv.org/pdf/{id})       -- fallback when HTML 404s
+  3. Semantic Scholar Graph API              -- metadata + abstract + tldr,
                                                  and sometimes reveals an
                                                  arXiv id the bib didn't have
+  4. the entry's DOI URL                     -- canonical publisher page
+  5. the bib entry's own `url` field         -- publisher/anthology page
 
 It does NOT read or summarize the paper -- that qualitative work belongs to
-whoever calls this script (fetch the returned URL with WebFetch/Read and do
-the actual reading). This script only saves round-trips spent guessing
+whoever calls this script (open the returned URL with a web or document-reading
+tool and do the actual reading). This script only saves round-trips spent guessing
 whether a URL exists.
 
 Usage:
-  python resolve_paper.py --bib references.bib            # every entry
+  python resolve_paper.py --bib references.bib
   python resolve_paper.py --bib references.bib --key foo2021bar
   python resolve_paper.py --arxiv 2401.12345
+  python resolve_paper.py --doi 10.1234/example
   python resolve_paper.py --title "Learning Transferable Visual Models..."
   python resolve_paper.py --url https://arxiv.org/abs/2401.12345
 
@@ -74,10 +76,20 @@ def extract_arxiv_id(text):
     return m.group(1) if m else None
 
 
+def normalize_doi(value):
+    if not value:
+        return None
+    doi = value.strip()
+    doi = re.sub(r"^https?://(?:dx\.)?doi\.org/", "", doi, flags=re.IGNORECASE)
+    doi = re.sub(r"^doi:\s*", "", doi, flags=re.IGNORECASE)
+    doi = doi.strip().rstrip(".,;)")
+    return doi or None
+
+
 def parse_bibtex(path):
-    """Minimal brace-balanced bibtex splitter. Good enough for standard
-    entries; does not handle exotic nested-comment edge cases."""
-    raw = open(path, encoding="utf-8").read()
+    """Parse common BibTeX entries with brace- or quote-delimited fields."""
+    with open(path, encoding="utf-8") as handle:
+        raw = handle.read()
     entries = []
     i = 0
     n = len(raw)
@@ -97,11 +109,7 @@ def parse_bibtex(path):
                 k += 1
             body = raw[j + 1 : k - 1]
             key, _, rest = body.partition(",")
-            fields = {}
-            for fm in re.finditer(
-                r"(\w+)\s*=\s*\{((?:[^{}]|\{[^{}]*\})*)\}", rest
-            ):
-                fields[fm.group(1).lower()] = re.sub(r"\s+", " ", fm.group(2)).strip()
+            fields = parse_bibtex_fields(rest)
             entries.append({"type": entry_type, "key": key.strip(), **fields})
             i = k
         else:
@@ -109,17 +117,72 @@ def parse_bibtex(path):
     return entries
 
 
+def parse_bibtex_fields(text):
+    fields = {}
+    i = 0
+    length = len(text)
+    while i < length:
+        while i < length and (text[i].isspace() or text[i] == ","):
+            i += 1
+        match = re.match(r"([A-Za-z][\w-]*)\s*=", text[i:])
+        if not match:
+            i += 1
+            continue
+        name = match.group(1).lower()
+        i += match.end()
+        while i < length and text[i].isspace():
+            i += 1
+        if i >= length:
+            fields[name] = ""
+            break
+        if text[i] == "{":
+            value, i = read_braced_value(text, i)
+        elif text[i] == '"':
+            value, i = read_quoted_value(text, i)
+        else:
+            start = i
+            while i < length and text[i] != ",":
+                i += 1
+            value = text[start:i]
+        fields[name] = re.sub(r"\s+", " ", value).strip()
+    return fields
+
+
+def read_braced_value(text, start):
+    depth = 1
+    i = start + 1
+    value_start = i
+    while i < len(text) and depth:
+        if text[i] == "{":
+            depth += 1
+        elif text[i] == "}":
+            depth -= 1
+        i += 1
+    return text[value_start : i - 1], i
+
+
+def read_quoted_value(text, start):
+    i = start + 1
+    value_start = i
+    escaped = False
+    while i < len(text):
+        char = text[i]
+        if char == '"' and not escaped:
+            return text[value_start:i], i + 1
+        if char == "\\" and not escaped:
+            escaped = True
+        else:
+            escaped = False
+        i += 1
+    return text[value_start:], len(text)
+
+
 def resolve_one(fields):
-    """fields: dict that may contain title, eprint, archiveprefix, url, doi, key."""
+    """Resolve fields containing title, eprint, archiveprefix, url, doi, or key."""
     key = fields.get("key", fields.get("title", "unknown"))
     title = fields.get("title", "")
     arxiv_id = None
 
-    # Only trust an eprint field when it's explicitly tagged as arXiv, and
-    # only trust a URL's digits as an arXiv id when the URL is actually on
-    # arxiv.org -- otherwise a DOI or proceedings URL containing an
-    # incidental \d{4}\.\d{4,5} substring (e.g. a DOI ending in ...2026.132885)
-    # gets misread as an arXiv id.
     if fields.get("archiveprefix", "").lower() == "arxiv" and fields.get("eprint"):
         arxiv_id = extract_arxiv_id(fields["eprint"])
     if not arxiv_id and "arxiv.org" in fields.get("url", ""):
@@ -130,7 +193,7 @@ def resolve_one(fields):
         "title": title,
         "arxiv_id": arxiv_id,
         "bib_url": fields.get("url"),
-        "doi": fields.get("doi"),
+        "doi": normalize_doi(fields.get("doi")),
         "recommended_source": None,
         "candidates": [],
     }
@@ -151,14 +214,6 @@ def resolve_one(fields):
             )
             if pdf_status == 200:
                 result["recommended_source"] = pdf_url
-            # else: a confirmed arXiv id with neither HTML nor PDF reachable
-            # is unusual (wrong/withdrawn id) -- fall through to the next
-            # tiers below rather than guessing an /abs/ URL that may 404 too.
-
-    # Even when the bib entry has no arXiv id, many conference papers were
-    # also posted to arXiv -- and arXiv HTML beats a bare proceedings
-    # abstract page, so check Semantic Scholar for an arXiv id BEFORE
-    # falling back to the bib's own url.
     if not result["recommended_source"] and title:
         s2 = http_get_json(
             f"{S2_SEARCH_URL}?query={urllib.parse.quote(title)}&fields={S2_FIELDS}&limit=1"
@@ -180,6 +235,13 @@ def resolve_one(fields):
                     result["recommended_source"] = html_url
         else:
             result["semantic_scholar"] = s2 if isinstance(s2, dict) else None
+
+    if not result["recommended_source"] and result["doi"]:
+        doi_url = f"https://doi.org/{result['doi']}"
+        status = http_status(doi_url)
+        result["candidates"].append({"type": "doi", "url": doi_url, "status": status})
+        if status and status < 400:
+            result["recommended_source"] = doi_url
 
     if not result["recommended_source"] and fields.get("url"):
         status = http_status(fields["url"])
@@ -211,6 +273,7 @@ def main():
     ap.add_argument("--bib", help="path to a .bib file")
     ap.add_argument("--key", help="only resolve this bibtex key (used with --bib)")
     ap.add_argument("--arxiv", help="a bare arXiv id, e.g. 2401.12345")
+    ap.add_argument("--doi", help="a DOI, with or without the https://doi.org/ prefix")
     ap.add_argument("--title", help="a paper title to search for")
     ap.add_argument("--url", help="a URL (arxiv abs/pdf, or any paper page)")
     args = ap.parse_args()
@@ -224,10 +287,12 @@ def main():
                 sys.exit(1)
         results = [resolve_one(e) for e in entries]
         print(json.dumps(results, indent=2))
-    elif args.arxiv or args.title or args.url:
+    elif args.arxiv or args.doi or args.title or args.url:
         fields = {}
         if args.arxiv:
             fields = {"eprint": args.arxiv, "archiveprefix": "arxiv", "key": args.arxiv}
+        elif args.doi:
+            fields = {"doi": args.doi, "key": args.doi}
         elif args.url:
             fields = {"url": args.url, "key": args.url}
         if args.title:

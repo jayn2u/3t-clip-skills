@@ -1,6 +1,6 @@
 ---
 name: paper-citation-lookup
-description: Looks up what a specific cited paper actually says — its method, contribution, or a claim you attributed to it — starting from an arXiv ID/URL, a paper title, a DOI, or a whole .bib/reference list. Prefers the arXiv HTML render (arxiv.org/html/<id>) over the PDF or abstract page whenever it exists, because it is the only format Claude can read section-by-section instead of guessing from an abstract. Falls back through arXiv PDF, the publisher/proceedings page, and Semantic Scholar metadata when no arXiv HTML exists. Use this whenever the user asks "what does [paper] actually claim/do", wants you to verify a citation before they write it into a paper, pastes a bibtex entry or arXiv link and asks for a summary, or hands you a whole bibliography file and wants each entry's contribution captured (e.g. for filling in AGENTS.md/CLAUDE.md project notes, a related-work section, or a citation list) — even if they don't say the word "arXiv" out loud.
+description: Looks up what a specific cited paper actually says — its method, contribution, or a claim you attributed to it — starting from an arXiv ID or URL, a paper title, a DOI, or a whole .bib/reference list. Prefers the arXiv HTML render over the PDF or abstract page whenever it exists, because it supports section-by-section reading instead of guessing from an abstract. Falls back through arXiv PDF, the publisher/proceedings page, and Semantic Scholar metadata when no arXiv HTML exists. Use this whenever the user asks "what does [paper] actually claim/do", wants you to verify a citation before they write it into a paper, pastes a bibtex entry or arXiv link and asks for a summary, or hands you a whole bibliography file and wants each entry's contribution captured (e.g. for filling in AGENTS.md/CLAUDE.md project notes, a related-work section, or a citation list) — even if they don't say the word "arXiv" out loud.
 ---
 
 # Paper Citation Lookup
@@ -9,7 +9,7 @@ description: Looks up what a specific cited paper actually says — its method, 
 
 An abstract tells you what a paper claims to have done, not how, and a PDF
 forces you to either read the whole thing or guess which page has the part
-you need. arXiv's HTML render (`arxiv.org/html/<id>`) is full text with real
+you need. arXiv's HTML render (`arxiv.org/html/{id}`) is full text with real
 section boundaries, so you can quote "Section 3.2" or "Table 4" instead of
 paraphrasing an abstract and hoping it's accurate. Since ~2023 arXiv
 auto-generates HTML for nearly all new submissions and has backfilled a large
@@ -20,6 +20,8 @@ special case.
 
 **1. Get an identifier for each paper.** From what the user gave you:
 - arXiv ID/URL → use directly.
+- DOI → pass it to the resolver as `--doi`; DOI URLs are checked after any
+  arXiv source discovered from the title.
 - Bibtex entry → the id is often in `eprint` + `archiveprefix = {arXiv}`, or
   embedded in the `url` field.
 - Title only, or a proceedings URL (ACL Anthology, CVF, MLR Press, NeurIPS
@@ -34,10 +36,11 @@ you and returns a `recommended_source` plus the reasoning trail:
 
 ```bash
 python3 scripts/resolve_paper.py --arxiv 2401.12345
+python3 scripts/resolve_paper.py --doi 10.1234/example
 python3 scripts/resolve_paper.py --title "Learning Transferable Visual Models From Natural Language Supervision"
 python3 scripts/resolve_paper.py --url https://arxiv.org/abs/2401.12345
-python3 scripts/resolve_paper.py --bib references.bib                  # every entry
-python3 scripts/resolve_paper.py --bib references.bib --key smith2024foo  # one entry
+python3 scripts/resolve_paper.py --bib references.bib
+python3 scripts/resolve_paper.py --bib references.bib --key smith2024foo
 ```
 
 The priority it applies, and why, is in `references/source_priority.md` —
@@ -45,12 +48,13 @@ skim it once if a result surprises you (e.g. it picked a Semantic Scholar
 abstract over a paywalled proceedings page).
 
 **3. Fetch and actually read `recommended_source`.**
-- An `arxiv_html` or `arxiv_pdf` URL → WebFetch it (or Read, for the PDF —
-  Read handles PDFs natively; pass `pages` for long papers rather than
-  pulling the whole thing at once).
-- A `bib_url` or `s2_open_access_pdf` → WebFetch it. If it turns out to be
+- An `arxiv_html` or `arxiv_pdf` URL → open it with the available web or
+  document-reading tool. For a PDF, read bounded page ranges rather than
+  pulling the whole thing at once.
+- A `doi`, `bib_url`, or `s2_open_access_pdf` → open it with the available web
+  or document-reading tool. If it turns out to be
   paywalled or JS-gated, fall back to the `semantic_scholar` block already in
-  the result (abstract + tldr) plus a WebSearch for anything the abstract
+  the result (abstract + tldr) plus a web-search tool for anything the abstract
   doesn't cover.
 - `semantic_scholar_abstract_only` or `web_search_fallback` → you don't have
   full text; say so plainly rather than inventing method details from the

@@ -28,16 +28,17 @@ heavy pipeline when the user just wanted a quick orientation.
    already handed you a bibtex file or specific citations, use that skill
    directly instead.
 
-2. **Find candidate papers.** Use WebSearch (arXiv, Google Scholar-style
+2. **Find candidate papers.** Use a web-search tool (arXiv, Google Scholar-style
    queries, or Semantic Scholar's search API) to find 4–8 papers that look
    genuinely relevant — prefer recent, well-cited, or clearly on-topic work
    over padding the list. If the user already has a codebase or paper draft
    with a related-work section or existing citations, check there first
-   (grep for `\cite`, a `.bib` file, or an existing "Related Work" section)
+   (use repository text search for `\cite`, a `.bib` file, or an existing
+   "Related Work" section)
    before searching cold — they may already have half the answer.
 
-3. **Read each candidate, don't just list titles.** For each paper, hand off
-   to `paper-citation-lookup`'s approach: prefer the arXiv HTML source when
+3. **Read each candidate, don't just list titles.** For each paper, follow
+   `paper-citation-lookup`'s approach: prefer the arXiv HTML source when
    it exists, so what you report is grounded in the actual method/results
    rather than a title-shaped guess. A brief made of unread titles is not
    more useful than the search results page itself.
