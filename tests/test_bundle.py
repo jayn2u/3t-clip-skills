@@ -173,7 +173,7 @@ class BundleTests(unittest.TestCase):
         )
         self.assertEqual(catalog["forbiddenPaths"], [])
 
-    def test_official_codex_validator_validates_actual_adapter_root(self):
+    def test_official_codex_validator_accepts_adapter_metadata(self):
         validator = find_official_script("plugin-creator/scripts/validate_plugin.py")
         if validator is None:
             self.skipTest("official Codex plugin validator is unavailable")
@@ -181,14 +181,15 @@ class BundleTests(unittest.TestCase):
         if interpreter is None:
             self.skipTest("Python interpreter with YAML support is unavailable")
         result = subprocess.run(
-            [interpreter, str(validator), str(ROOT)],
+            [interpreter, str(validator), str(CODEX_ADAPTER)],
             cwd=ROOT,
             text=True,
             capture_output=True,
         )
         self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+        self.assertIn("Plugin validation passed", result.stdout)
 
-    def test_official_codex_validator_visits_actual_adapter_payload(self):
+    def test_official_codex_validator_visits_root_skills_payload(self):
         validator = find_official_script("plugin-creator/scripts/validate_plugin.py")
         if validator is None:
             self.skipTest("official Codex plugin validator is unavailable")
