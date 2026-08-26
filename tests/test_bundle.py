@@ -141,7 +141,7 @@ class BundleTests(unittest.TestCase):
         }
         self.assertEqual(direct_skills, EXPECTED_SKILLS)
 
-    def test_codex_catalog_uses_namespaced_skill_identifiers(self):
+    def test_codex_catalog_infers_namespaced_identifiers_from_installed_payload(self):
         self.assertTrue(CODEX_INSPECT.is_file())
         if os.environ.get("RUN_CODEX_CATALOG") != "1":
             self.skipTest("Codex isolated catalog integration is opt-in")
@@ -158,13 +158,22 @@ class BundleTests(unittest.TestCase):
         self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
         catalog = json.loads(result.stdout)
         self.assertEqual(catalog["pluginId"], "3t-clip@3t-clip")
+        self.assertEqual(set(catalog["installedSkills"]), EXPECTED_SKILLS)
         self.assertEqual(
-            set(catalog["skillIdentifiers"]),
+            catalog["codexCatalog"]["installed"][0]["pluginId"],
+            "3t-clip@3t-clip",
+        )
+        self.assertNotIn("skills", catalog["codexCatalog"]["installed"][0])
+        inference = catalog["identifierInference"]
+        self.assertEqual(inference["source"], "packaging-contract-inference")
+        self.assertTrue(inference["notReturnedByCodex"])
+        self.assertEqual(
+            set(inference["identifiers"]),
             {f"3t-clip:{name}" for name in EXPECTED_SKILLS},
         )
         self.assertEqual(catalog["forbiddenPaths"], [])
 
-    def test_official_codex_validator_validates_canonical_skill_payload(self):
+    def test_official_codex_validator_validates_actual_adapter_root(self):
         validator = find_official_script("plugin-creator/scripts/validate_plugin.py")
         if validator is None:
             self.skipTest("official Codex plugin validator is unavailable")
@@ -179,7 +188,7 @@ class BundleTests(unittest.TestCase):
         )
         self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
 
-    def test_official_codex_validator_visits_every_canonical_skill(self):
+    def test_official_codex_validator_visits_actual_adapter_payload(self):
         validator = find_official_script("plugin-creator/scripts/validate_plugin.py")
         if validator is None:
             self.skipTest("official Codex plugin validator is unavailable")
@@ -194,7 +203,7 @@ class BundleTests(unittest.TestCase):
             "visited = []\n"
             "original = module.validate_skill_manifest\n"
             "def record(skill_root, errors):\n"
-            "    visited.append(skill_root.name)\n"
+            "    visited.append(str(skill_root.resolve()))\n"
             "    return original(skill_root, errors)\n"
             "module.validate_skill_manifest = record\n"
             "errors = module.validate_plugin(__import__('pathlib').Path(sys.argv[2]))\n"
@@ -209,7 +218,11 @@ class BundleTests(unittest.TestCase):
         self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
         payload = json.loads(result.stdout)
         self.assertEqual(payload["errors"], [])
-        self.assertEqual(set(payload["visited"]), EXPECTED_SKILLS)
+        expected_paths = {str((SKILLS / name).resolve()) for name in EXPECTED_SKILLS}
+        self.assertEqual(set(payload["visited"]), expected_paths)
+        self.assertTrue(
+            all(Path(path).parent == SKILLS.resolve() for path in payload["visited"])
+        )
 
     def test_bundle_contains_exactly_expected_skills(self):
         actual = {path.parent.name for path in SKILLS.glob("*/SKILL.md")}

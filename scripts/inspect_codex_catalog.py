@@ -1,4 +1,5 @@
 import json
+import os
 import shutil
 import subprocess
 import sys
@@ -50,6 +51,65 @@ def fail(message: str, detail: str = "") -> int:
     if detail:
         print(detail, file=sys.stderr)
     return 1
+
+
+def find_yaml_python() -> str | None:
+    executables: list[str] = []
+    for command in ("python3", "python"):
+        for directory in os.environ.get("PATH", "").split(os.pathsep):
+            if not directory:
+                continue
+            candidate = Path(directory) / command
+            if candidate.is_file() and os.access(candidate, os.X_OK):
+                executables.append(str(candidate))
+    executables.append(sys.executable)
+    seen: set[str] = set()
+    for executable in executables:
+        if executable in seen:
+            continue
+        seen.add(executable)
+        result = subprocess.run(
+            [executable, "-c", "import yaml"],
+            text=True,
+            capture_output=True,
+        )
+        if result.returncode == 0:
+            return executable
+    return None
+
+
+def find_quick_validator() -> Path | None:
+    for root in (
+        Path.home() / ".codex/skills/.system",
+        Path.home() / ".agents/skills/.system",
+    ):
+        candidate = root / "skill-creator/scripts/quick_validate.py"
+        if candidate.is_file():
+            return candidate
+    return None
+
+
+def validate_installed_skills(skill_paths: list[Path]) -> tuple[bool, str]:
+    quick_validator = find_quick_validator()
+    interpreter = find_yaml_python()
+    if quick_validator is None or interpreter is None:
+        return False, "official Codex quick validator is unavailable"
+    for skill_path in skill_paths:
+        result = subprocess.run(
+            [interpreter, str(quick_validator), str(skill_path)],
+            text=True,
+            capture_output=True,
+        )
+        if result.returncode != 0:
+            return False, result.stdout + result.stderr
+    return True, ""
+
+
+def infer_skill_identifiers_from_packaging_contract(
+    plugin_record: dict[str, object], skill_names: set[str]
+) -> list[str]:
+    plugin_name = str(plugin_record["name"])
+    return sorted(f"{plugin_name}:{name}" for name in skill_names)
 
 
 def main() -> int:
@@ -162,17 +222,26 @@ def main() -> int:
                 "Codex installed skill payload does not match the canonical skills",
                 json.dumps({"expected": sorted(expected_skill_dirs), "actual": sorted(skill_dirs)}),
             )
+        skill_paths = [installed_root / name for name in sorted(skill_dirs)]
+        validated, validation_error = validate_installed_skills(skill_paths)
+        if not validated:
+            return fail("Installed Codex skills failed official validation", validation_error)
         if forbidden_paths:
             return fail("Codex installed payload contains forbidden paths", json.dumps(forbidden_paths))
-        identifiers = sorted(f"{plugin_name}:{name}" for name in skill_dirs)
+        identifiers = infer_skill_identifiers_from_packaging_contract(record, skill_dirs)
         print(
             json.dumps(
                 {
                     "pluginId": record["pluginId"],
-                    "skillIdentifiers": identifiers,
+                    "codexCatalog": {"installed": [record]},
+                    "installedSkills": sorted(skill_dirs),
+                    "identifierInference": {
+                        "identifiers": identifiers,
+                        "notReturnedByCodex": True,
+                        "source": "packaging-contract-inference",
+                    },
                     "forbiddenPaths": forbidden_paths,
                     "installedPath": record["installedPath"],
-                    "catalog": {"installed": [record]},
                 },
                 sort_keys=True,
             )
