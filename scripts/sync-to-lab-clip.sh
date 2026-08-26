@@ -12,6 +12,38 @@ fail() {
   exit 1
 }
 
+reject_symlink_components() {
+  local input=$1
+  local current remainder component
+  local -a components
+  if [[ "$input" == /* ]]; then
+    current="/"
+    remainder=${input#/}
+  else
+    current=$(pwd -P)
+    remainder=$input
+  fi
+  IFS=/ read -r -a components <<< "$remainder"
+  for component in "${components[@]}"; do
+    case "$component" in
+      ""|.)
+        continue
+        ;;
+      ..)
+        current=$(dirname -- "$current")
+        ;;
+      *)
+        if [[ "$current" == "/" ]]; then
+          current="/$component"
+        else
+          current="$current/$component"
+        fi
+        ;;
+    esac
+    [[ ! -L "$current" ]] || fail "심볼릭 링크 경로 구성 요소는 lab_clip 대상이 될 수 없습니다: $current"
+  done
+}
+
 if (( $# != 1 )); then
   fail "lab_clip 대상 경로 하나만 지정해야 합니다: $0 <lab-clip-path>"
 fi
@@ -54,7 +86,7 @@ case "$TARGET_INPUT" in
     ;;
 esac
 
-[[ ! -L "$TARGET_INPUT" ]] || fail "심볼릭 링크 경로는 lab_clip 대상이 될 수 없습니다"
+reject_symlink_components "$TARGET_INPUT"
 [[ -d "$TARGET_INPUT" ]] || fail "lab_clip 대상 디렉터리가 없습니다: $TARGET_INPUT"
 TARGET_ROOT=$(CDPATH= cd -- "$TARGET_INPUT" && pwd -P) || fail "lab_clip 대상 경로를 해석할 수 없습니다: $TARGET_INPUT"
 [[ "$TARGET_ROOT" != / ]] || fail "root-like 경로는 lab_clip 대상이 될 수 없습니다"
@@ -64,11 +96,8 @@ TARGET_ROOT=$(CDPATH= cd -- "$TARGET_INPUT" && pwd -P) || fail "lab_clip 대상 
 
 CLAUDE_ROOT="$TARGET_ROOT/.claude"
 SKILLS_ROOT="$CLAUDE_ROOT/skills"
-[[ ! -e "$CLAUDE_ROOT" || -d "$CLAUDE_ROOT" ]] || fail "lab_clip의 .claude 경로가 디렉터리가 아닙니다"
-[[ ! -L "$CLAUDE_ROOT" ]] || fail "lab_clip의 .claude 심볼릭 링크는 허용되지 않습니다"
-[[ ! -L "$SKILLS_ROOT" ]] || fail "lab_clip의 .claude/skills 심볼릭 링크는 허용되지 않습니다"
-mkdir -p -- "$SKILLS_ROOT"
-[[ ! -L "$SKILLS_ROOT" && -d "$SKILLS_ROOT" ]] || fail "lab_clip의 .claude/skills 경로가 안전하지 않습니다"
+[[ -d "$CLAUDE_ROOT" && ! -L "$CLAUDE_ROOT" ]] || fail "lab_clip에 기존 .claude 디렉터리가 필요합니다"
+[[ -d "$SKILLS_ROOT" && ! -L "$SKILLS_ROOT" ]] || fail "lab_clip에 기존 .claude/skills 디렉터리가 필요합니다"
 
 EXPECTED_SKILLS_ROOT=$(CDPATH= cd -- "$SKILLS_ROOT" && pwd -P)
 [[ "$EXPECTED_SKILLS_ROOT" == "$TARGET_ROOT/.claude/skills" ]] || fail "lab_clip 스킬 대상 경로가 예상과 다릅니다"

@@ -125,6 +125,45 @@ class BundleTests(unittest.TestCase):
         self.assertNotEqual(result.returncode, 0)
         self.assertIn("lab_clip", result.stderr)
 
+    def test_sync_script_rejects_symlinked_ancestor(self):
+        real_parent = self.temp_dir / "real-parent"
+        target = real_parent / "lab_clip"
+        (target / ".git").mkdir(parents=True)
+        (target / "AGENTS.md").write_text("test target\n")
+        for name in EXPECTED_SKILLS:
+            destination = target / ".claude" / "skills" / name
+            destination.mkdir(parents=True)
+            (destination / "stale.txt").write_text("remove me\n")
+        sentinel = target / "unrelated.txt"
+        sentinel.write_text("preserve me\n")
+        linked_parent = self.temp_dir / "linked-parent"
+        linked_parent.symlink_to(real_parent, target_is_directory=True)
+
+        result = subprocess.run(
+            [ROOT / "scripts/sync-to-lab-clip.sh", linked_parent / "lab_clip"],
+            text=True,
+            capture_output=True,
+        )
+
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("심볼릭", result.stderr)
+        self.assertEqual(sentinel.read_text(), "preserve me\n")
+
+    def test_sync_script_rejects_missing_skills_parent_without_mutation(self):
+        target = self.temp_dir / "lab_clip"
+        (target / ".git").mkdir(parents=True)
+        (target / "AGENTS.md").write_text("test target\n")
+
+        result = subprocess.run(
+            [ROOT / "scripts/sync-to-lab-clip.sh", target],
+            text=True,
+            capture_output=True,
+        )
+
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn(".claude", result.stderr)
+        self.assertFalse((target / ".claude").exists())
+
     def test_sync_script_updates_only_expected_skill_destinations(self):
         target = self.temp_dir / "lab_clip"
         (target / ".git").mkdir(parents=True)

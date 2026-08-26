@@ -102,7 +102,7 @@ Claude의 업데이트는 재시작이 필요할 수 있습니다. Codex 마켓�
 ./scripts/sync-to-lab-clip.sh /mnt/data/lab_clip
 ```
 
-대상은 반드시 실제 `lab_clip` 저장소여야 하며 `<target>/.git`과 `<target>/AGENTS.md`가 모두 있어야 합니다. 스크립트는 먼저 번들의 매니페스트와 세 `SKILL.md`를 검증한 다음, 정확히 다음 세 경로에만 `rsync --delete`를 적용합니다.
+대상은 반드시 실제 `lab_clip` 저장소여야 하며 `<target>/.git`과 `<target>/AGENTS.md`가 모두 있어야 합니다. 또한 `<target>/.claude/skills/` 부모 디렉터리가 미리 존재해야 하며, 스크립트는 이 부모를 만들거나 삭제하지 않습니다. 스크립트는 먼저 번들의 매니페스트와 세 `SKILL.md`를 검증한 다음, 정확히 다음 세 경로에만 `rsync --delete`를 적용합니다.
 
 ```text
 <target>/.claude/skills/paper-citation-lookup/
@@ -110,7 +110,7 @@ Claude의 업데이트는 재시작이 필요할 수 있습니다. Codex 마켓�
 <target>/.claude/skills/t2i-rank1-diagnosis/
 ```
 
-각 대상 안의 오래된 파일은 제거될 수 있지만, 대상 저장소의 다른 파일과 디렉터리는 건드리지 않습니다. 빈 경로, 루트형 경로, 번들 자체, 마커가 없는 디렉터리, 경로 구성 요소가 심볼릭 링크인 대상은 거부합니다. 테스트는 임시 대상만 사용하며 실제 `/mnt/data/lab_clip`에는 동기화하지 않습니다.
+각 대상 안의 오래된 파일은 제거될 수 있고 세 대상 디렉터리는 없을 경우 만들어질 수 있지만, 부모와 대상 저장소의 다른 파일·디렉터리는 건드리지 않습니다. 빈 경로, 루트형 경로, 번들 자체, 마커가 없는 디렉터리, 경로 구성 요소가 심볼릭 링크인 대상은 거부합니다. 테스트는 임시 대상만 사용하며 실제 `/mnt/data/lab_clip`에는 동기화하지 않습니다.
 
 ## 네트워크와 보안 경계
 
