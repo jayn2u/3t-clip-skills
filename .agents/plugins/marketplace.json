@@ -1,0 +1,20 @@
+{
+  "name": "3t-clip",
+  "interface": {
+    "displayName": "3T CLIP"
+  },
+  "plugins": [
+    {
+      "name": "3t-clip",
+      "source": {
+        "source": "local",
+        "path": "./"
+      },
+      "policy": {
+        "installation": "AVAILABLE",
+        "authentication": "ON_INSTALL"
+      },
+      "category": "Developer Tools"
+    }
+  ]
+}

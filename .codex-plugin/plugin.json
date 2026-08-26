@@ -1,0 +1,23 @@
+{
+  "name": "3t-clip",
+  "version": "0.1.0",
+  "description": "A bundle of research and retrieval skills for the 3T CLIP lab.",
+  "author": {
+    "name": "Jiwoong Choi",
+    "email": "contact.jiwoong.choi@vis.ssu.ac.kr"
+  },
+  "repository": "https://github.com/jayn2u/3t-clip-skills",
+  "skills": "./skills/",
+  "interface": {
+    "displayName": "3T CLIP",
+    "shortDescription": "Research and retrieval skills for 3T CLIP.",
+    "longDescription": "A reusable bundle of research and retrieval skills for the 3T CLIP lab.",
+    "developerName": "Jiwoong Choi",
+    "category": "Developer Tools",
+    "capabilities": [
+      "Analyze",
+      "Research"
+    ],
+    "defaultPrompt": "Help me use the 3T CLIP skills."
+  }
+}

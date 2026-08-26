@@ -1,0 +1,22 @@
+{
+  "name": "3t-clip",
+  "owner": {
+    "name": "Jiwoong Choi",
+    "email": "contact.jiwoong.choi@vis.ssu.ac.kr"
+  },
+  "description": "A bundle of research and retrieval skills for the 3T CLIP lab.",
+  "version": "0.1.0",
+  "plugins": [
+    {
+      "name": "3t-clip",
+      "source": "./",
+      "description": "A bundle of research and retrieval skills for the 3T CLIP lab.",
+      "version": "0.1.0",
+      "author": {
+        "name": "Jiwoong Choi",
+        "email": "contact.jiwoong.choi@vis.ssu.ac.kr"
+      },
+      "repository": "https://github.com/jayn2u/3t-clip-skills"
+    }
+  ]
+}

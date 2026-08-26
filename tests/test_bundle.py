@@ -28,6 +28,18 @@ def load_frontmatter(path: Path) -> dict[str, str]:
 
 
 class BundleTests(unittest.TestCase):
+    def test_plugin_manifests_name_the_same_bundle(self):
+        claude = json.loads((ROOT / ".claude-plugin/plugin.json").read_text())
+        codex = json.loads((ROOT / ".codex-plugin/plugin.json").read_text())
+        self.assertEqual(claude["name"], "3t-clip")
+        self.assertEqual(codex["name"], "3t-clip")
+
+    def test_marketplaces_resolve_local_bundle(self):
+        claude = json.loads((ROOT / ".claude-plugin/marketplace.json").read_text())
+        codex = json.loads((ROOT / ".agents/plugins/marketplace.json").read_text())
+        self.assertEqual(claude["plugins"][0]["source"], "./")
+        self.assertEqual(codex["plugins"][0]["source"]["path"], "./")
+
     def test_bundle_contains_exactly_expected_skills(self):
         actual = {path.parent.name for path in SKILLS.glob("*/SKILL.md")}
         self.assertEqual(actual, EXPECTED_SKILLS)
