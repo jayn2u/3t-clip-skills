@@ -1,5 +1,8 @@
 import json
+import os
+import shutil
 import subprocess
+import tempfile
 import unittest
 from pathlib import Path
 
@@ -39,6 +42,38 @@ class BundleTests(unittest.TestCase):
         codex = json.loads((ROOT / ".agents/plugins/marketplace.json").read_text())
         self.assertEqual(claude["plugins"][0]["source"], "./")
         self.assertEqual(codex["plugins"][0]["source"]["path"], "./")
+
+    @unittest.skipUnless(shutil.which("codex"), "Codex CLI not installed")
+    def test_codex_cli_installs_root_marketplace_plugin(self):
+        with tempfile.TemporaryDirectory(prefix="task2-codex-home-") as codex_home:
+            environment = os.environ.copy()
+            environment["CODEX_HOME"] = codex_home
+            add = subprocess.run(
+                ["codex", "plugin", "marketplace", "add", str(ROOT), "--json"],
+                cwd=ROOT,
+                env=environment,
+                text=True,
+                capture_output=True,
+            )
+            self.assertEqual(add.returncode, 0, add.stderr)
+            add_payload = json.loads(add.stdout)
+            self.assertEqual(Path(add_payload["installedRoot"]), ROOT)
+            install = subprocess.run(
+                ["codex", "plugin", "add", "3t-clip@3t-clip", "--json"],
+                cwd=ROOT,
+                env=environment,
+                text=True,
+                capture_output=True,
+            )
+            self.assertEqual(install.returncode, 0, install.stderr)
+            payload = json.loads(install.stdout)
+            installed_root = Path(payload["installedPath"])
+            self.assertTrue(installed_root.is_relative_to(Path(codex_home)))
+            self.assertTrue(installed_root.is_dir())
+            for name in EXPECTED_SKILLS:
+                self.assertTrue(
+                    (installed_root / "skills" / name / "SKILL.md").is_file(), name
+                )
 
     def test_bundle_contains_exactly_expected_skills(self):
         actual = {path.parent.name for path in SKILLS.glob("*/SKILL.md")}
