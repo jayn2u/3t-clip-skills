@@ -216,3 +216,12 @@ __marimo__/
 
 # Streamlit
 .streamlit/secrets.toml
+
+# Local agent state and generated experiment outputs
+.claude/
+.codex/
+.agents/cache/
+.agents/skills/
+wandb/
+artifacts/
+results/

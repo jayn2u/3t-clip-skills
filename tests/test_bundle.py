@@ -1,5 +1,7 @@
 import json
+import shutil
 import subprocess
+import tempfile
 import unittest
 from pathlib import Path
 
@@ -28,6 +30,10 @@ def load_frontmatter(path: Path) -> dict[str, str]:
 
 
 class BundleTests(unittest.TestCase):
+    def setUp(self):
+        self.temp_dir = Path(tempfile.mkdtemp())
+        self.addCleanup(shutil.rmtree, self.temp_dir)
+
     def test_plugin_manifests_name_the_same_bundle(self):
         claude = json.loads((ROOT / ".claude-plugin/plugin.json").read_text())
         codex = json.loads((ROOT / ".codex-plugin/plugin.json").read_text())
@@ -101,3 +107,63 @@ class BundleTests(unittest.TestCase):
                         0,
                         f"{name}: {relative} is not tracked",
                     )
+
+    def test_readme_documents_every_install_and_invocation(self):
+        readme = (ROOT / "README.md").read_text()
+        self.assertIn("npx skills@latest add jayn2u/3t-clip-skills --all", readme)
+        for name in EXPECTED_SKILLS:
+            self.assertIn(f"/3t-clip:{name}", readme)
+            self.assertIn(f"${name}", readme)
+        self.assertIn("lab_clip", readme)
+
+    def test_sync_script_rejects_incompatible_target(self):
+        result = subprocess.run(
+            [ROOT / "scripts/sync-to-lab-clip.sh", self.temp_dir],
+            text=True,
+            capture_output=True,
+        )
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("lab_clip", result.stderr)
+
+    def test_sync_script_updates_only_expected_skill_destinations(self):
+        target = self.temp_dir / "lab_clip"
+        (target / ".git").mkdir(parents=True)
+        (target / "AGENTS.md").write_text("test target\n")
+        unrelated = target / "unrelated" / "sentinel.txt"
+        unrelated.parent.mkdir(parents=True)
+        unrelated.write_text("preserve me\n")
+        for name in EXPECTED_SKILLS:
+            destination = target / ".claude" / "skills" / name
+            destination.mkdir(parents=True)
+            (destination / "stale.txt").write_text("remove me\n")
+
+        result = subprocess.run(
+            [ROOT / "scripts/sync-to-lab-clip.sh", target],
+            text=True,
+            capture_output=True,
+        )
+
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertEqual(unrelated.read_text(), "preserve me\n")
+        for name in EXPECTED_SKILLS:
+            source = SKILLS / name
+            destination = target / ".claude" / "skills" / name
+            source_files = {
+                path.relative_to(source)
+                for path in source.rglob("*")
+                if path.is_file()
+            }
+            destination_files = {
+                path.relative_to(destination)
+                for path in destination.rglob("*")
+                if path.is_file()
+            }
+            self.assertEqual(destination_files, source_files, name)
+            for relative in source_files:
+                self.assertEqual(
+                    (destination / relative).read_bytes(),
+                    (source / relative).read_bytes(),
+                    f"{name}: {relative}",
+                )
+            self.assertFalse((destination / "stale.txt").exists())
+            self.assertIn(name, result.stdout)
