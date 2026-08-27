@@ -1,0 +1,18 @@
+{
+  "dataset": "cuhk-pedes",
+  "model_name": "ViT-B-32",
+  "pretrained": "openai",
+  "optimizer": "adamw",
+  "epochs": 60,
+  "lr": 0.00001,
+  "warmup_ratio": 0.036639,
+  "early_stop_plateau_enabled": true,
+  "early_stop_plateau_min_delta": 0.002,
+  "early_stop_plateau_patience": 12,
+  "early_stop_plateau_start_epoch": 42,
+  "checkpoint_selection_metric": "t2i_r1",
+  "best_t2i_at_1": 0.7215,
+  "best_t2i_epoch": 48,
+  "stop_epoch": 60,
+  "stop_reason": "t2i_r1 did not improve by 0.002000 for 12 validation epochs"
+}

@@ -1,0 +1,26 @@
+{
+  "run_id": "fixture-cuhk-pedes-adamw-20260826",
+  "group": "cuhk-pedes_itc_adamw",
+  "project": "labclip",
+  "entity": "fixture",
+  "job_type": "train",
+  "output_dir": "artifacts/cuhk-pedes_itc_adamw",
+  "job_suffix": "itc_adamw",
+  "dataset": "cuhk-pedes",
+  "model_name": "ViT-B-32",
+  "pretrained": "openai",
+  "checkpoint_selection_metric": "t2i_r1",
+  "status": "early_stopped",
+  "best_t2i_at_1": 0.7215,
+  "best_t2i_epoch": 48,
+  "stop_epoch": 60,
+  "stop_reason": "t2i_r1 did not improve by 0.002000 for 12 validation epochs",
+  "early_stop": {
+    "plateau_best_t2i": 0.7215,
+    "bad_epochs": 12,
+    "min_delta": 0.002,
+    "patience": 12,
+    "start_epoch": 42,
+    "stopped": true
+  }
+}
