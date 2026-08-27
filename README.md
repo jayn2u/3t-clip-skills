@@ -1,10 +1,10 @@
 # 3T CLIP Skill Distribution Bundle
 
-This repository distributes three reusable skills for the `lab_clip` research repository as a single bundle.
+This repository distributes three reusable research skills as a single bundle.
 
 - `paper-citation-lookup`: Verifies paper identifiers and references, then finds reliable primary sources.
 - `prior-research-brief`: Performs a concise survey of prior research on a topic and summarizes approaches and gaps.
-- `t2i-rank1-diagnosis`: Diagnoses causes of degraded t2i R@1 in `lab_clip`'s CLIP-based text-to-image retrieval.
+- `t2i-rank1-diagnosis`: Diagnoses causes of degraded t2i R@1 in CLIP-based text-to-image retrieval.
 
 ## Prerequisites
 
@@ -72,9 +72,9 @@ Codex's unauthenticated plugin catalog provides the installed plugin identifier 
 
 ## Automatic Selection and Direct Invocation
 
-All three skills support automatic selection and direct user invocation. Requests about checking paper claims or references automatically select `paper-citation-lookup`; topic-focused prior-research exploration selects `prior-research-brief`; and `lab_clip` retrieval results or t2i R@1 diagnosis selects `t2i-rank1-diagnosis`. When you need to force a specific skill, use the namespaced command or `$` invocation shown above.
+All three skills support automatic selection and direct user invocation. Requests about checking paper claims or references automatically select `paper-citation-lookup`; topic-focused prior-research exploration selects `prior-research-brief`; and CLIP-based retrieval results or t2i R@1 diagnosis selects `t2i-rank1-diagnosis`. When you need to force a specific skill, use the namespaced command or `$` invocation shown above.
 
-`t2i-rank1-diagnosis` can run only in a compatible `lab_clip` checkout. That checkout must contain the `AGENTS.md`, domain documents, configuration YAML files, `src` modules, training outputs, and W&B metadata referenced by the instructions. The skill may be installed in other projects, but when invoked from an incompatible location it must clearly explain why and leave the project unchanged.
+`t2i-rank1-diagnosis` can run only in a compatible project checkout. That checkout must contain the `AGENTS.md`, domain documents, configuration YAML files, `src` modules, training outputs, and W&B metadata referenced by the instructions. The skill may be installed in other projects, but when invoked from an incompatible location it must clearly explain why and leave the project unchanged.
 
 ## Updating and Removing
 
@@ -96,25 +96,7 @@ codex plugin marketplace remove 3t-clip
 
 Claude updates may require a restart. For Codex, refresh the remote snapshot with `upgrade`, then run `plugin add` again. Use commands matching the installation scope, and do not assume that removing a global installation also removes a project installation.
 
-## Synchronizing with the `lab_clip` Project
-
-The `skills/` directory in this repository is the sole source of truth. The following command synchronizes only the three directories in the validated bundle to the specified `lab_clip` checkout.
-
-```bash
-./scripts/sync-to-lab-clip.sh /mnt/data/lab_clip
-```
-
-The target must be an actual `lab_clip` repository containing both `<target>/.git` and `<target>/AGENTS.md`. The parent directory `<target>/.claude/skills/` must already exist; the script does not create or delete this parent. After validating the bundle manifests and all three `SKILL.md` files, the script applies `rsync --delete` only to these three paths:
-
-```text
-<target>/.claude/skills/paper-citation-lookup/
-<target>/.claude/skills/prior-research-brief/
-<target>/.claude/skills/t2i-rank1-diagnosis/
-```
-
-Stale files inside each target may be removed, and the three target directories may be created if they do not exist. The parent and all other files and directories in the target repository are left untouched. The script rejects empty paths, root paths, the bundle itself, directories without the required markers, and targets with symbolic-link path components. Tests use temporary targets only and never synchronize with the real `/mnt/data/lab_clip`.
-
-Before synchronization, a reusable offline validator checks the JSON manifests, skill frontmatter, support files, and eval resource paths. To validate the bundle only, run:
+Before installation, a reusable offline validator checks the JSON manifests, skill frontmatter, support files, and eval resource paths. To validate the bundle only, run:
 
 ```bash
 uv run python scripts/validate_bundle.py .
