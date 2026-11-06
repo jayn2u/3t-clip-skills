@@ -38,9 +38,13 @@ heavy pipeline when the user just wanted a quick orientation.
    before searching cold — they may already have half the answer.
 
 3. **Read each candidate, don't just list titles.** For each paper, follow
-   `paper-citation-lookup`'s approach: prefer the arXiv HTML source when
-   it exists, so what you report is grounded in the actual method/results
-   rather than a title-shaped guess. A brief made of unread titles is not
+   `paper-citation-lookup`'s approach, and for any paper on arXiv read its
+   full text with the `arxiv-paper-reader` skill (it prefers the cleaned
+   arXiv HTML and falls back to trimmed PDF text, reporting which it used),
+   so what you report is grounded in the actual method/results rather than a
+   title-shaped guess. With several arXiv candidates, pass them to it in one
+   run with `--out-dir`, and use `--section` to read just the method and
+   results when that is all the brief needs. A brief made of unread titles is not
    more useful than the search results page itself.
 
 4. **Synthesize, don't just enumerate.** Group papers by approach or angle

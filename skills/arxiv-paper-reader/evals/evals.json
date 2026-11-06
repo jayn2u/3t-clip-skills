@@ -1,0 +1,42 @@
+{
+  "skill_name": "arxiv-paper-reader",
+  "evals": [
+    {
+      "id": 0,
+      "name": "clip-html-summary",
+      "prompt": "arXiv 2103.00020 (CLIP 논문) 전문을 읽고 학습 방법이랑 zero-shot 평가 방식만 핵심 위주로 요약해줘.",
+      "expected_output": "read_arxiv.py로 arXiv HTML을 H9 정제해서 읽고, path=html 경로를 사용했다고 밝힌 뒤, 대조 학습(contrastive) 사전학습과 프롬프트 기반 zero-shot 분류 평가를 본문 섹션 근거와 함께 요약.",
+      "files": [],
+      "assertions": [
+        "Runs scripts/read_arxiv.py on 2103.00020 rather than opening the HTML or PDF with a generic web tool",
+        "States that the HTML path (path=html) was used",
+        "Summary covers the contrastive image-text pretraining objective and prompt-based zero-shot classification, grounded in specific sections of the paper",
+        "Does not invent numbers or claims that are not in the extracted text"
+      ]
+    },
+    {
+      "id": 1,
+      "name": "no-html-pdf-fallback",
+      "prompt": "https://arxiv.org/abs/hep-th/9711200 이 논문 결론 부분에서 주장하는 내용을 정리해줘. 원문 표현도 한두 문장 인용해줘.",
+      "expected_output": "arXiv HTML 버전이 없어 PDF 경로로 fallback 되었고 fallback_reason과 trim_metadata=none을 사용자에게 알린 뒤, pdftotext에서 추출해 trimmed 된 본문에서 결론 부분을 찾아 정리하고 실제 텍스트를 인용.",
+      "files": [],
+      "assertions": [
+        "Runs scripts/read_arxiv.py on hep-th/9711200 and reports that the PDF fallback path was used because no HTML version exists",
+        "Quotes sentences that actually appear in the extracted text",
+        "Mentions that PDF-path text may have lost equation formatting or that it was produced by pdftotext"
+      ]
+    },
+    {
+      "id": 2,
+      "name": "section-quote-irra",
+      "prompt": "2303.12501 논문의 Method 섹션만 읽고, 핵심 모듈 이름이랑 각 모듈의 역할을 원문 인용과 함께 알려줘. 전체 논문은 필요 없어.",
+      "expected_output": "--outline 으로 섹션 목록을 확인하고 --section 3 (또는 Method)으로 해당 섹션만 가져와 읽은 뒤, IRRA의 implicit relation reasoning 모듈과 similarity distribution matching 등 모듈을 원문 인용과 함께 설명하며 path=html 사용을 밝힘.",
+      "files": [],
+      "assertions": [
+        "Uses --section (optionally after --outline) to read only the Method section instead of the full paper",
+        "Names the paper's main modules such as implicit relation reasoning and similarity distribution matching with quotes from the extracted section",
+        "States which path (html or pdf) produced the text"
+      ]
+    }
+  ]
+}

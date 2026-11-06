@@ -6,8 +6,10 @@
 
 2. **arXiv PDF** (`arxiv.org/pdf/{id}`), if the id exists but HTML 404s (rare
    now, but happens for some older or malformed submissions). Still full
-   text, just not section-addressable in the same way; use a document-reading
-   `pages` range for long ones instead of pulling the whole document.
+   text, just not section-addressable in the same way. The
+   `arxiv-paper-reader` skill handles both arXiv tiers: it reads the HTML when
+   it is usable and otherwise falls back to trimmed `pdftotext` output,
+   reporting which path it took.
 
 3. **Semantic Scholar arXiv discovery**: if the bib entry has *no* arXiv id
    at all (common for entries that only cite the peer-reviewed venue), the

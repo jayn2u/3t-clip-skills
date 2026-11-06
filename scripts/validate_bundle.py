@@ -5,6 +5,7 @@ from pathlib import Path
 
 
 EXPECTED_SKILLS = {
+    "arxiv-paper-reader",
     "paper-citation-lookup",
     "prior-research-brief",
     "t2i-rank1-diagnosis",

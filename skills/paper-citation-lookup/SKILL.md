@@ -48,9 +48,13 @@ skim it once if a result surprises you (e.g. it picked a Semantic Scholar
 abstract over a paywalled proceedings page).
 
 **3. Fetch and actually read `recommended_source`.**
-- An `arxiv_html` or `arxiv_pdf` URL → open it with the available web or
-  document-reading tool. For a PDF, read bounded page ranges rather than
-  pulling the whole thing at once.
+- An `arxiv_html` or `arxiv_pdf` URL → read it with the `arxiv-paper-reader`
+  skill instead of a generic web or PDF tool. It fetches the arXiv HTML,
+  cleans it to compact text, falls back to trimmed `pdftotext` output when
+  there is no usable HTML, and reports which path it used. For a long paper,
+  run it with `--outline` first and then `--section` for the parts you need.
+  Note that it drops the appendix, captions, and references; open the arXiv
+  page directly only if the claim lives there.
 - A `doi`, `bib_url`, or `s2_open_access_pdf` → open it with the available web
   or document-reading tool. If it turns out to be
   paywalled or JS-gated, fall back to the `semantic_scholar` block already in
@@ -63,7 +67,8 @@ abstract over a paywalled proceedings page).
 
 **4. Ground the answer in where it came from.** When you report what a paper
 says, note which source it came from (e.g. "per Section 4.1 of the arXiv
-HTML" vs. "per the abstract only — full text wasn't available") so the user
+HTML", "per the trimmed arXiv PDF text (no HTML version)" vs. "per the
+abstract only — full text wasn't available") so the user
 knows how much to trust the specificity of the claim. This matters most when
 they're about to cite the paper themselves.
 
@@ -74,6 +79,9 @@ one at a time with separate tool round-trips for the resolution step — run
 `resolve_paper.py --bib <file>` once to get every entry's recommended source
 up front, *then* fetch/read them (this can be sequential or, if you have
 subagents available and the list is long, split across a few in parallel).
+For the entries with an arXiv source, pass all their ids to
+`arxiv-paper-reader` in one run with `--out-dir` so the downloads share its
+cache and rate limiting, then read each output file.
 Semantic Scholar's public API is rate-limited without a key; the script
 already retries with backoff, but on a large bibliography (20+ entries
 without arXiv ids in the bib itself) expect it to take a couple of minutes —
